@@ -10,20 +10,20 @@ const ssdcocoModelPath = './data/SSD_300x300';
 const Schema = mongoose.Schema;
 const cameraDataSchema = new Schema(
   {
-    CameraID: {
+    cameraID: {
       type: String,
       required: true,
     },
-    label: String,
+    // label: String,
     name: String,
-    confidence: Number,
+    count: Number,
     datetime: Date,
     location: {
       type: [Number],
       required: true,
     },
   },
-  { timestamps: true }
+  { timestamps: false }
 );
 
 // var dataSchema = new Schema({
@@ -118,7 +118,7 @@ const CameraData = mongoose.model('Database', cameraDataSchema);
 /**
  * Connect to MongoDB.
  */
-const MONGODB_URI = 'mongodb://localhost:27017/testhack';
+const MONGODB_URI = 'mongodb://localhost:27017/hack_app';
 mongoose.set('useFindAndModify', false);
 mongoose.set('useCreateIndex', true);
 mongoose.set('useNewUrlParser', true);
@@ -329,9 +329,9 @@ const runDetectPeopleExample = async () => {
         // });
         // dataSet.push(datasave);
         dataSet.push({
-          CameraID: datain.CameraID,
+          cameraID: datain.CameraID,
           location: cameraGeo,
-          label: p.classLabel,
+          // label: p.classLabel,
           name: p.className,
           // confidence: p.confidence.toFixed(2),
           datetime: currentDateTime,
@@ -347,7 +347,7 @@ const runDetectPeopleExample = async () => {
                return a;
             }, {});
           }
-          const result = groupBy(dataSet, 'label');
+          const result = groupBy(dataSet, 'name');
           console.log(result);
           console.log('dataSet.length: ', dataSet.length);
           const data = [];
@@ -358,6 +358,7 @@ const runDetectPeopleExample = async () => {
           }
           console.log(data);
           await CameraData.insertMany(data, function(err) {
+            console.log(err);
 
           });
         }
