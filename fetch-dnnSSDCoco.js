@@ -19,15 +19,8 @@ const cameraDataSchema = new Schema(
     confidence: Number,
     datetime: Date,
     location: {
-      type: {
-        type: String,
-        enum: ['Point'],
-        required: true,
-      },
-      coordinates: {
-        type: [Number],
-        required: true,
-      },
+      type: [Number],
+      required: true,
     },
   },
   { timestamps: true }
@@ -35,6 +28,17 @@ const cameraDataSchema = new Schema(
 
 // var dataSchema = new Schema({
 
+  // location: {
+  //   type: {
+  //     type: String,
+  //     enum: ['Point'],
+  //     required: true,
+  //   },
+  //   coordinates: {
+  //     type: [Number],
+  //     required: true,
+  //   },
+  // },
 //   label: String,
 //   name: String,
 //   confidence: Number
@@ -286,48 +290,83 @@ const runDetectPeopleExample = async () => {
           resolve();
         });
       });
-      console.log('33', datain.CameraID);
-      console.log('1', fileName);
-      const img = await cv.imread(fileSavePath);
-      console.log('11 222233');
-      const minConfidence = 0.3;
-      console.log('11 2');
+      // console.log('33', datain.CameraID);
+      // console.log('1', fileName);
+      const img = await cv.imreadAsync('./data/dishes.jpg');
+      //const img = await cv.imreadAsync(fileSavePath);
+      // console.log('11 222233');
+      const minConfidence = 0.2;
+      // console.log('11 2');
       const predictions = await classifyImg(img).filter(
         res => res.confidence > minConfidence
       );
-      console.log('11 3 predictions');
-      // console.log(predictions);
-      if(predictions && predictions.length <= 0) {
-        console.log('predictions empty');
-      }
-      predictions.forEach(async p => {
-        console.log(p);
-        const cameraGeo = {
-          type: 'Point',
-          coordinates: [datain.Longitude, datain.Latitude],
-        };
-        const datasave = new CameraData({
+      // console.log('11 3 predictions');
+      // // console.log(predictions);
+      // if(predictions && predictions.length <= 0) {
+      //   console.log('predictions empty');
+      // }
+      const dataSet = [];
+      predictions.forEach(async (p, key, arr) => {
+        // console.log(p);
+        const cameraGeo = [datain.Longitude, datain.Latitude];
+        // const cameraGeo = {
+        //   type: 'Point',
+        //   coordinates: [datain.Longitude, datain.Latitude],
+        // };
+        // const datasave = new CameraData({
+        //   CameraID: datain.CameraID,
+        //   location: cameraGeo,
+        //   name: p.className,
+        //   datetime: currentDateTime,
+        // });
+        // const datasave = new CameraData({
+        //   CameraID: datain.CameraID,
+        //   location: cameraGeo,
+        //   label: p.classLabel,
+        //   name: p.className,
+        //   confidence: p.confidence.toFixed(2),
+        //   datetime: currentDateTime,
+        // });
+        // dataSet.push(datasave);
+        dataSet.push({
           CameraID: datain.CameraID,
           location: cameraGeo,
           label: p.classLabel,
           name: p.className,
-          confidence: p.confidence.toFixed(2),
+          // confidence: p.confidence.toFixed(2),
           datetime: currentDateTime,
         });
-        await datasave.save();
-        // const data = new dataDetails(
-        //   {
-        //     label: p.classLabel,
-        //     name: p.className,
-        //     confidence: p.confidence.toFixed(2),
-        //     datetime: currentDateTime,
-        //   });
-        // await data.save();
+        // await datasave.save();
+        if (Object.is(arr.length - 1, key)) {
+          // execute last item logic
+          // console.log(`Last callback call at index ${key} with value ${val}` ); 
+          // console.log(dataSet);
+          function groupBy(list, props) {
+            return list.reduce((a, b) => {
+               (a[b[props]] = a[b[props]] || []).push(b);
+               return a;
+            }, {});
+          }
+          const result = groupBy(dataSet, 'label');
+          console.log(result);
+          console.log('dataSet.length: ', dataSet.length);
+          const data = [];
+          for (let [key, value] of Object.entries(result)) {
+          //   console.log(`${key}: ${value}`);
+            data.push({...value[0], count: value.length});
+          //   console.log(value[0])
+          }
+          console.log(data);
+          await CameraData.insertMany(data, function(err) {
+
+          });
+        }
       });
+      // console.log('dataSet.length: ', dataSet.length);
       
-      if (currentUrlCount <= (totalUrlCount - 1)) {
-        getNextUrl();
-    }
+      // if (currentUrlCount <= (totalUrlCount - 1)) {
+      //   getNextUrl();
+      // }
     // });
   }
   getNextUrl();
@@ -409,11 +448,11 @@ const runDetectPeopleExample = async () => {
 };
 
 // runDetectDishesExample();
-// runDetectPeopleExample();
 
-setInterval(function() {
-  runDetectPeopleExample();
-}, 30000);
+runDetectPeopleExample();
+// setInterval(function() {
+//   runDetectPeopleExample();
+// }, 30000);
 
 
 // 30000 - 0.5 Minute
